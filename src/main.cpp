@@ -58,26 +58,45 @@ class Application : public EventCallbacks
         int gMat = 0;
 
         float cTheta = 0;
+        float pitch = 0;
+        float yaw = 0;
         bool mouseDown = false;
+
+        double posX, posY;
+        double last_x, last_y;
+        float mouse_sensitivity = 10;
 
         void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
         {
-            if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+            if (action == GLFW_PRESS)
             {
-                glfwSetWindowShouldClose(window, GL_TRUE);
+                switch (key)
+                {
+                    case GLFW_KEY_ESCAPE:
+                        glfwSetWindowShouldClose(window, GL_TRUE);
+                        break;
+                    case GLFW_KEY_M:
+                        gMat = (gMat + 1) % 4;
+                        break;
+                    case GLFW_KEY_A:
+                        yaw += 5;
+                        break;
+                    case GLFW_KEY_D:
+                        yaw -= 5;
+                        break;
+                    case GLFW_KEY_I:
+                        if (mouse_sensitivity < 35)
+                            mouse_sensitivity += 5;
+                        break;
+                    case GLFW_KEY_S:
+                        if (mouse_sensitivity > 15)
+                            mouse_sensitivity -= 5;
+                        else
+                            mouse_sensitivity -= 1;
+                        break;
+                }
             }
-            else if (key == GLFW_KEY_M && action == GLFW_PRESS)
-            {
-                gMat = (gMat + 1) % 4;
-            }
-            else if (key == GLFW_KEY_A && action == GLFW_PRESS)
-            {
-                cTheta += 5;
-            }
-            else if (key == GLFW_KEY_D && action == GLFW_PRESS)
-            {
-                cTheta -= 5;
-            }
+
         }
 
         void scrollCallback(GLFWwindow* window, double deltaX, double deltaY)
@@ -87,13 +106,10 @@ class Application : public EventCallbacks
 
         void mouseCallback(GLFWwindow *window, int button, int action, int mods)
         {
-            double posX, posY;
-
             if (action == GLFW_PRESS)
             {
-                mouseDown = true;
                 glfwGetCursorPos(window, &posX, &posY);
-                cout << "Pos X " << posX << " Pos Y " << posY << endl;
+                mouseDown = true;
                 Moving = true;
             }
 
@@ -106,6 +122,24 @@ class Application : public EventCallbacks
 
         void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
         {
+            if (Moving)
+            {
+                glfwGetCursorPos(window, &posX, &posY);
+                double deltaX = posX - last_x; 
+                double deltaY = posY - last_y;
+
+                if (abs(deltaX) > mouse_sensitivity)
+                {
+                    last_x = posX;
+                    yaw -= (deltaX/abs(deltaX)) * 5;
+                }
+
+                if (abs(deltaY) > mouse_sensitivity)
+                {
+                    last_y = posY;
+                    pitch += (deltaY/abs(deltaY)) * 5;
+                }
+            }
         }
 
         void resizeCallback(GLFWwindow *window, int width, int height)
@@ -293,6 +327,14 @@ class Application : public EventCallbacks
             Projection->perspective(45.0f, aspect, 0.01f, 100.0f);
             // Identity view - for now
             View->pushMatrix();
+            View->lookAt(vec3(0, 0, 0), 
+                    vec3(
+                        cos(radians(pitch))*cos(radians(yaw)), 
+                        sin(radians(pitch)), 
+                        cos(radians(pitch))*sin(radians(yaw))
+                    ),
+                    vec3(0, 1, 0)
+            );
 
             //Draw our scene - two meshes - right now to a texture
             prog->bind();
@@ -302,7 +344,7 @@ class Application : public EventCallbacks
             // globl transforms for 'camera' (you will fix this now!)
             Model->pushMatrix();
             Model->loadIdentity();
-            Model->rotate(radians(cTheta), vec3(0, 1, 0));
+            //Model->rotate(radians(cTheta), vec3(0, 1, 0));
 
             float tx, tz, theta = 0;
             for (int i = 0; i < 10; i++)
