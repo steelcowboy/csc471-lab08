@@ -386,11 +386,11 @@ class Application : public EventCallbacks
                 ProcessImage(texBuf[1]);
 
                 /*code to write out the FBO (texture) just once -an example*/
-                if (FirstTime)
-                {
-                    assert(GLTextureWriter::WriteImage(texBuf[0], "Texture_output.png"));
-                    FirstTime = false;
-                }
+                //if (FirstTime)
+                //{
+                    //assert(GLTextureWriter::WriteImage(texBuf[0], "Texture_output.png"));
+                    //FirstTime = false;
+                //}
             }
         }
 
